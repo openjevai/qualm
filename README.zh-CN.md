@@ -15,6 +15,8 @@
 
 面向 System One 模型（[TypeSafe 的 Jev](https://typesafe.ai/)）的类型化决策库 —— 在这里，**不确定性是一件你必须处理的事**。
 
+> **OpenJEV 支持：** Jev 由 [TypeSafe](https://typesafe.ai) 构建。此 fork 保留 TypeSafe 为默认，并增加了对 [OpenJEV](https://openjev.sh)（同一 Jev 模型的免费社区网关）的可选支持 —— 设置 `OPENJEV_API_KEY`（或使用 `provider: "openjev"`）即可启用。原项目：https://github.com/qddegtya/qualm by @qddegtya。
+
 一个把判断塌缩成 `boolean`、或者塌缩成一个裸 argmax 的 API，扔掉的恰恰是唯一能告诉你"该升级了"的信号。qualm 不这么干：每一次决策都有 `unsure` 分支，而且编译器不允许你忘记它。
 
 ## 这个库带来了什么
@@ -26,7 +28,7 @@ Jev 是模型。下面这些是 `qualm` 在"自己去调它的 HTTP API"之上�
 - **不确定性是一个你必须写出来的分支。** `unsure` 是每次决策的必填键，忽略它的决策编译不过。
 - **交接给 System 2 只需要一行。** 把 LLM 调用放进 `unsure`，`decide` 会把它的 promise 原样透传 —— 这次交接没有任何特殊处理。
 - **Jev 的三个原语全部支持**，且各自保留完整的概率分布和置信度：`is` 判断命题，`choice` 做选择，`score` 对评分表定位。
-- **一套 API 背后两个 provider** —— TypeSafe 官方端点与 Cloudflare Workers AI。
+- **一套 API 背后三个 provider** —— TypeSafe 官方端点、Cloudflare Workers AI 与 OpenJEV（同一 Jev 模型的免费社区网关）。
 - **看得到一次调用花了多少。** `onUsage` 报告 token 消耗和真正作答的模型版本，做计量不必自己再解析一遍响应。
 - **重试、取消与超时。** `429` 和 `5xx` 上**带抖动的**退避重试（遵守 `Retry-After`）、覆盖整次调用的默认超时、`AbortSignal` 支持，以及携带状态码和已解析 body 的 `ApiError`。
 - **零运行时依赖**，以 ESM 和 CJS 双格式发布，各自带独立的类型声明。
@@ -174,6 +176,7 @@ team.decide({ … }, { confidence: 0.95 }); // 更高，因为这个分支会删
 ```ts
 client({ provider: "cloudflare", accountId, apiKey }); // CLOUDFLARE_ACCOUNT_ID、CLOUDFLARE_API_TOKEN
 client({ provider: "typesafe", apiKey }); //             TYPESAFE_API_KEY
+client({ provider: "openjev", apiKey }); //              OPENJEV_API_KEY
 ```
 
 密钥会回退到上述环境变量，且**在调用时才读取** —— 导入这个包不执行任何东西，这正是 `sideEffects: false` 所承诺的。
@@ -218,7 +221,7 @@ flowchart TD
     question["<b>question.ts</b><br/>is · choice · score<br/>标签模板构造器"]
     client["<b>client.ts</b><br/>client() · ask()<br/>请求 → 答案"]
     answer["<b>answer.ts</b><br/>答案 · decide()<br/>置信度门控"]
-    provider["<b>provider.ts</b><br/>typesafe · cloudflare<br/>wire 形状"]
+    provider["<b>provider.ts</b><br/>typesafe · cloudflare · openjev<br/>wire 形状"]
     retry["<b>retry.ts</b><br/>退避 · 429 / 5xx"]
     error["<b>error.ts</b><br/>ApiError"]
 
@@ -244,7 +247,7 @@ flowchart TD
 | 评分表保住它的档位                  | `const` 类型参数让 `score` 的档位保持元组而非 `string[]`       |
 | 同步分支可以和异步分支并存          | `ReturnType<H[keyof H]>` 返回它们的并集，而不是强迫它们一致    |
 | 漏写的 `await` 会被抓住             | 联合类型里保留着 `Promise`，正是 `no-floating-promises` 的抓手 |
-| 非法的 client 配置写不出来          | 判别联合：`cloudflare` 需要 `accountId`，`typesafe` 不需要     |
+| 非法的 client 配置写不出来          | 判别联合：`cloudflare` 需要 `accountId`，`typesafe` 和 `openjev` 不需要     |
 
 `tsconfig` 开启了 `strict`，外加 `exactOptionalPropertyTypes`、`noUncheckedIndexedAccess`、`noPropertyAccessFromIndexSignature`、`noImplicitReturns`、`noFallthroughCasesInSwitch`、`noUnusedLocals`、`noUnusedParameters` 和 `erasableSyntaxOnly`。`src` 里没有 `any`，没有 `!`；少数几个 `as` 都位于 wire 边界上，且每一个都带着说明其保证的注释。
 

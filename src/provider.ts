@@ -50,6 +50,13 @@ export const typesafe = (apiKey: string, baseUrl = "https://api.typesafe.ai"): P
   unwrap: (payload) => payload as WireResult,
 });
 
+export const openjev = (apiKey: string, baseUrl = "https://api.openjev.sh"): Provider => ({
+  url: `${trim(baseUrl)}/v1/systemone`,
+  headers: { authorization: `Bearer ${apiKey}` },
+  body: ({ state, questions, model }) => ({ model, state, questions }),
+  unwrap: (payload) => payload as WireResult,
+});
+
 export const cloudflare = (
   apiToken: string,
   accountId: string,

@@ -16,6 +16,11 @@
 Typed decisions from a System One model ([TypeSafe's Jev](https://typesafe.ai/)), where uncertainty
 is something you have to handle.
 
+> **OpenJEV support:** Jev is built by [TypeSafe](https://typesafe.ai). This fork keeps TypeSafe as
+> the default and adds optional support for [OpenJEV](https://openjev.sh), a free community gateway
+> to the same Jev model — set `OPENJEV_API_KEY` (or use `provider: "openjev"`) to use it. Original
+> project: https://github.com/qddegtya/qualm by @qddegtya.
+
 A judgment that collapses to `boolean`, or to a bare `argmax`, throws away the one signal that tells
 you when to escalate. `qualm` never does that: every decision has an `unsure` branch, and the
 compiler will not let you forget it.
@@ -35,7 +40,8 @@ Jev is the model. This is what `qualm` adds on top of calling its HTTP API yours
   promise straight through, so nothing about the handover is special-cased.
 - **All three of Jev's primitives**, each keeping its full distribution and confidence: `is` for a
   proposition, `choice` for a selection, `score` for a rubric.
-- **Two providers behind one API** — TypeSafe's own endpoint and Cloudflare Workers AI.
+- **Three providers behind one API** — TypeSafe's own endpoint, Cloudflare Workers AI, and OpenJEV
+  (a free community gateway to the same Jev model).
 - **See what a call cost.** `onUsage` reports the token counts and the concrete model version that
   answered, so metering does not mean re-parsing the response yourself.
 - **Retries, cancellation and deadlines.** Jittered backoff on `429` and `5xx` honouring
@@ -214,6 +220,7 @@ top too. Reading it skips the uncertainty check, on purpose and visibly, the way
 ```ts
 client({ provider: "cloudflare", accountId, apiKey }); // CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN
 client({ provider: "typesafe", apiKey }); //             TYPESAFE_API_KEY
+client({ provider: "openjev", apiKey }); //              OPENJEV_API_KEY
 ```
 
 Keys fall back to those environment variables, read at call time — importing this package runs
@@ -268,7 +275,7 @@ flowchart TD
     question["<b>question.ts</b><br/>is · choice · score<br/>tagged-template builders"]
     client["<b>client.ts</b><br/>client() · ask()<br/>request → answers"]
     answer["<b>answer.ts</b><br/>answers · decide()<br/>confidence gating"]
-    provider["<b>provider.ts</b><br/>typesafe · cloudflare<br/>wire shapes"]
+    provider["<b>provider.ts</b><br/>typesafe · cloudflare · openjev<br/>wire shapes"]
     retry["<b>retry.ts</b><br/>backoff · 429 / 5xx"]
     error["<b>error.ts</b><br/>ApiError"]
 
@@ -294,7 +301,7 @@ This library exists because a type can make you handle something. The strictness
 | A rubric keeps its levels               | A `const` type parameter keeps `score` levels a tuple instead of `string[]` |
 | Sync branches beside an async one       | `ReturnType<H[keyof H]>` returns their union instead of forcing agreement   |
 | A forgotten `await` is caught           | The union keeps a `Promise` in it, which `no-floating-promises` keys on     |
-| Invalid client config cannot be written | A discriminated union: `cloudflare` needs `accountId`, `typesafe` does not  |
+| Invalid client config cannot be written | A discriminated union: `cloudflare` needs `accountId`, `typesafe` and `openjev` do not  |
 
 `tsconfig` runs `strict` plus `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`,
 `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch`,

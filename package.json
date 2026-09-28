@@ -14,7 +14,8 @@
     "ai",
     "routing",
     "guardrails",
-    "cloudflare-workers-ai"
+    "cloudflare-workers-ai",
+    "openjev"
   ],
   "license": "MIT",
   "author": "qddegtya <qddegtya@gmail.com> (https://github.com/qddegtya)",

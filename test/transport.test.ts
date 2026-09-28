@@ -98,6 +98,21 @@ test("an aborted request is passed through rather than retried", async () => {
   await expect(c.ask("...", question, { signal: controller.signal })).rejects.toThrow(/abort/iu);
 });
 
+test("openjev sends to the OpenJEV gateway with model `openjev`", async () => {
+  const { fetch, calls } = stubFetch(ok);
+  const c = client({ provider: "openjev", apiKey: "key", fetch });
+
+  const { urgent } = await c.ask("Payouts failing.", question);
+
+  expect(calls[0]?.url).toBe("https://api.openjev.sh/v1/systemone");
+  expect(calls[0]?.body).toEqual({
+    model: "openjev",
+    state: "Payouts failing.",
+    questions: { urgent: { type: "noul", instructions: "This conveys urgency" } },
+  });
+  expect(urgent.probability).toBe(0.9);
+});
+
 test("falls back to the environment when a key is not passed", async () => {
   const environment = (globalThis as unknown as { process: { env: Record<string, string> } })
     .process.env;

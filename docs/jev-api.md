@@ -56,6 +56,25 @@ previous answer is a second request and must look like one in our API too.
 
 ## Other providers
 
+### OpenJEV — free community gateway
+
+[OpenJEV](https://openjev.sh) is a free community gateway to the same Jev model. The wire format is
+identical to TypeSafe's direct endpoint.
+
+```
+POST https://api.openjev.sh/v1/systemone
+Authorization: Bearer ***
+Content-Type: application/json
+```
+
+Model id `openjev`. Key: `OPENJEV_API_KEY` from https://openjev.sh/dashboard.
+
+The response includes the same `{ model, answers, usage: { input_tokens, output_tokens } }` fields,
+plus `usage.cost`, `id`, and `provider` (ignored by this library's `WireResult` type).
+
+Overload is reported as `503` (TypeSafe uses `529`); `429` rate limiting is the same. Both are already
+covered by the retry logic (`429` and `5xx`).
+
 ### Cloudflare Workers AI — the priority provider
 
 Checked 2026-09-18 against the [model page](https://developers.cloudflare.com/ai/models/typesafe/jev/)

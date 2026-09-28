@@ -16,6 +16,7 @@ import type {
 import { send, type RetryOptions } from "./retry.ts";
 import {
   cloudflare,
+  openjev,
   typesafe,
   type Provider,
   type State,
@@ -87,6 +88,11 @@ export type ClientOptions = Shared &
         /** Falls back to `CLOUDFLARE_ACCOUNT_ID`. */
         readonly accountId?: string;
       }
+    | {
+        readonly provider: "openjev";
+        /** Falls back to `OPENJEV_API_KEY`. */
+        readonly apiKey?: string;
+      }
   );
 
 export interface Client {
@@ -131,7 +137,7 @@ export function client(options: ClientOptions): Client {
   };
 }
 
-const defaultModel = { typesafe: "jev-latest", cloudflare: "typesafe/jev" } as const;
+const defaultModel = { typesafe: "jev-latest", cloudflare: "typesafe/jev", openjev: "openjev" } as const;
 
 // Arbitrary, and documented as such. Nothing about the model makes one number the right one.
 const defaultConfidence = 0.7;
@@ -146,6 +152,9 @@ function build(options: ClientOptions): Provider {
       required(options.accountId, "CLOUDFLARE_ACCOUNT_ID", "accountId"),
       options.baseUrl,
     );
+  }
+  if (options.provider === "openjev") {
+    return openjev(required(options.apiKey, "OPENJEV_API_KEY", "apiKey"), options.baseUrl);
   }
   return typesafe(required(options.apiKey, "TYPESAFE_API_KEY", "apiKey"), options.baseUrl);
 }
